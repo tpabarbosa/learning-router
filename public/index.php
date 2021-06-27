@@ -5,7 +5,7 @@ require_once(__DIR__ . '/../vendor/autoload.php');
 use Learning\Router;
 use Learning\ControllerExample;
 
-$router = new Router();
+$router = new Router(method(), path());
 
 $router->get('/', 'Main Page');
 $router->get('/test', 'Test Page');
@@ -14,7 +14,7 @@ $router->get('/closure', function () {
 });
 $router->get('/controller', [ControllerExample::class, 'index']);
 
-$route = $router->resolve(method(), path());
+$route = $router->resolve();
 
 echo $route;
 
