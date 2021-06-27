@@ -1,3 +1,5 @@
 /vendor/
 .phpunit.result.cache
 composer.json
+/logs/access.log
+/logs/error.log
