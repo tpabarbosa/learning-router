@@ -1,0 +1,15 @@
+<phpunit
+        stopOnFailure="false"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        beStrictAboutCoversAnnotation="true">
+
+    <testsuites>
+        <testsuite name="Router">
+            <file>tests/RouterTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>
+
