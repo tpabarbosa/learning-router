@@ -6,9 +6,9 @@ class Router
 {
     /**
      * The current registered callbacks by routes methods and paths
-     * routes[method][path] = [callback, callback_params]
+     * routes[method][path] = callback
      *
-     * @var array[]
+     * @var string|array|\Closure[]
      */
     private $routes = array();
 
@@ -17,12 +17,11 @@ class Router
      *
      * @param string $path
      * @param string|array|\Closure $callback
-     * @param array $callback_params
      * @return void
      */
-    public function get(string $path, $callback, array $callback_params=[])
+    public function get(string $path, $callback)
     {
-        $this->add('get', $path, $callback, $callback_params);
+        $this->add('get', $path, $callback);
     }
 
     /**
@@ -30,12 +29,11 @@ class Router
      *
      * @param string $path
      * @param string|array|\Closure $callback
-     * @param array $callback_params
      * @return void
      */
-    public function post(string $path, $callback, array $callback_params=[])
+    public function post(string $path, $callback)
     {
-        $this->add('post', $path, $callback, $callback_params);
+        $this->add('post', $path, $callback);
     }
 
     /**
@@ -44,12 +42,11 @@ class Router
      * @param string $method get|post
      * @param string $path
      * @param string|array|\Closure $callback
-     * @param array $callback_params
      * @return void
      */
-    private function add(string $method, string $path, $callback, array $callback_params=[])
+    private function add(string $method, string $path, $callback)
     {
-        $this->routes[$method][$path] = ['callback' => $callback, 'callback_params' => $callback_params];
+        $this->routes[$method][$path] = $callback;
     }
 
     /**
@@ -69,10 +66,25 @@ class Router
      *
      * @param string $method
      * @param string $path
-     * @return string|array|\Closure|null
+     * @return mixed 
      */
     public function resolve(string $method, string $path)
     {
-        return $this->routes[$method][$path] ?? null;
+        $route = 'Page Not Found';
+
+        if ($this->hasRoute($method, $path)) {
+            $route = $this->routes[$method][$path];
+        }
+
+        if (is_string($route)) {
+            return $route;
+        }
+        
+        if (is_array($route)) {
+            $route[0] = new $route[0]();
+        }
+        
+        return call_user_func_array($route, []);
+
     }
 }

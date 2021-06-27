@@ -32,15 +32,7 @@ final class RouterTest extends TestCase
         $router = new Router();
         $router->get('/test', 'Test');
         $route = $router->resolve('get', '/test');
-        $this->assertEquals('Test', $route['callback']);
+        $this->assertEquals('Test', $route);
     }
 
-    public function testCanResolveRouteWithCallbackParams()
-    {
-        $router = new Router();
-        $router->get('/test', 'Test', ['key1' => 'value1', 'key2' => 'value2']);
-        $route = $router->resolve('get', '/test');
-        $this->assertEquals('value1', $route['callback_params']['key1']);
-        $this->assertEquals('value2', $route['callback_params']['key2']);
-    }
 }
