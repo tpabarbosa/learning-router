@@ -83,11 +83,11 @@ class Router
     {
         $params=[];
         preg_match_all('/\/{:\w+}/', $path, $matches);
-        if ($matches[0]) {
-            foreach ($matches[0] as $param) {
-                $params[] = str_replace(['/{:','}'] , '', $param);
-            }
+
+        foreach ($matches[0] as $param) {
+            $params[] = str_replace(['/{:','}'] , '', $param);
         }
+
         return $params;
     }
 
