@@ -2,21 +2,35 @@
 
 require_once(__DIR__ . '/../vendor/autoload.php');
 
+use DI\Container;
 use Learning\Router;
-use Learning\ControllerExample;
+use LearningApp\ControllerExample;
+use LearningApp\DIContainerAdapter;
 
-$router = new Router(method(), path());
+$container = new DI\Container();
+// $container->set(ControllerExample::class, function () {
+//     return new ControllerExample('With Constructor Parameters');
+// });
+$container_adapter = new DIContainerAdapter($container);
+
+
+$router = new Router(method(), path(), $container_adapter);//);//
+
 
 $router->get('/', 'Main Page');
 $router->get('/test', 'Test Page');
-$router->get('/closure', function () {
-    return 'Testing Closure';
-});
+$router->get('/closure', function ($teste) {
+    return 'Testing Closure ' . $teste ;
+}, ['teste' => 'My Test']);
+$router->get('/closure/{:id}', function ($id, $teste) {
+    return 'Testing Closure ' . $teste. ' ' . $id;
+}, ['teste' => 'My Test']);
+
+$router->get('/controller/{:test}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
 $router->get('/controller', [ControllerExample::class, 'index']);
 
-$route = $router->resolve();
 
-echo $route;
+echo $router->resolve();
 
 
 
@@ -36,5 +50,3 @@ function method()
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     return strtolower($method);
 }
-
-

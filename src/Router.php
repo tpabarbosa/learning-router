@@ -20,24 +20,35 @@ class Router
      */
     private $routes_params = array();
 
+    private $routes_const_params = array();
+
+
     /**
      * The request method
-     * 
+     *
      * @var string
      */
     private $method;
 
     /**
      * The request path
-     * 
+     *
      * @var string
      */
     private $path;
 
-    public function __construct(string $method, string $path)
+    /**
+     * The DI container adapter
+     *
+     * @var string
+     */
+    private $container;
+
+    public function __construct(string $method, string $path, IRouterContainer $container = null)
     {
         $this->method = $method;
         $this->path = $path;
+        $this->container = $container;
     }
 
 
@@ -48,9 +59,9 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function get(string $path, $callback)
+    public function get(string $path, $callback, $params = array())
     {
-        $this->add('get', $path, $callback);
+        $this->add('get', $path, $callback, $params);
     }
 
     /**
@@ -73,10 +84,14 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    private function add(string $method, string $path, $callback)
+    private function add(string $method, string $path, $callback, $params)
     {
         $this->routes[$method][$path] = $callback;
         $this->routes_params[$method][$path] = $this->setRouteParams($path);
+        $this->routes_const_params[$method][$path] = $params;
+        if ($this->container) {
+            $this->container->add("$method.$path", $callback);
+        }
     }
 
     private function setRouteParams(string $path)
@@ -85,7 +100,7 @@ class Router
         preg_match_all('/\/{:\w+}/', $path, $matches);
 
         foreach ($matches[0] as $param) {
-            $params[] = str_replace(['/{:','}'] , '', $param);
+            $params[] = str_replace(['/{:','}'], '', $param);
         }
 
         return $params;
@@ -109,7 +124,7 @@ class Router
      *
      * @param string $method
      * @param string $path
-     * @return mixed 
+     * @return mixed
      */
     public function resolve()
     {
@@ -123,18 +138,34 @@ class Router
             $params = $routeParams['params'];
         }
 
-        $route = $this->routes[$method][$path] ?? 'Page Not Found';
-
-        if (is_string($route)) {
-            return $route;
+        $callback = $this->routes[$method][$path] ?? '';
+        if (!$callback) {
+            return 'Page Not Found';
         }
+        $params = array_merge($params, $this->routes_const_params[$method][$path]);
         
-        if (is_array($route)) {
-            $route[0] = new $route[0]();
+        if ($this->container) {
+            return $this->containerResolver("$method.$path", $params);
         }
-        
-        return call_user_func_array($route, $params);
+        return $this->routerResolver($callback, $params);
+    }
 
+    private function containerResolver($route, $params)
+    {
+        return $this->container->get($route, $params);
+    }
+
+    private function routerResolver($callback, $params)
+    {
+        if (is_string($callback)) {
+            return $callback;
+        }
+
+        if (is_array($callback)) {
+            $callback[0] = new $callback[0]();
+        }
+
+        return call_user_func_array($callback, $params);
     }
 
     private function checkRouteParams()
@@ -155,7 +186,7 @@ class Router
         }
     }
 
-    private function resolveParams($route, $matches) 
+    private function resolveParams($route, $matches)
     {
         $path = $this->path;
         $method = $this->method;
@@ -174,9 +205,13 @@ class Router
         $params_list = $this->routes_params[$method][$route] ?? [];
 
         foreach ($exploded_path as $key => $value) {
-            if (isset($params_list[$param]) && $exploded_path[$key] !== $exploded_route[$key]) {
+            if (isset($params_list[$param]) && preg_match('/{:\w+}/', $exploded_route[$key])) {
                 $params = array_merge($params, [ $params_list[$param] => $exploded_path[$key]]);
                 $param++;
+            }
+
+            if (isset($params_list[$param]) && ! preg_match('/{:\w+}/', $exploded_route[$key]) && $exploded_path[$key] !== $exploded_route[$key]) {
+                $exploded_route[$key] = $exploded_path[$key];
             }
         }
 

@@ -5,7 +5,7 @@ namespace LearningTests;
 use Learning\Router;
 use PHPUnit\Framework\TestCase;
 
-final class RouterTest extends TestCase
+final class RouterContainerTest extends TestCase
 {
     public function testIsInstaceOfRouter()
     {
