@@ -17,7 +17,7 @@
     "autoload": {
         "psr-4": {
             "Tpab\\Router\\": "src/",
-            "LearningApp\\": "app/"
+            "Tpab\\Demo\\": "demo/app/"
         }
     },
     "autoload-dev": {

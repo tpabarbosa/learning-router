@@ -1,6 +1,6 @@
 <?php
 
-namespace LearningApp;
+namespace Tpab\Demo;
 
 class ControllerExample
 {

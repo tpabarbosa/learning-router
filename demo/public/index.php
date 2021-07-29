@@ -1,11 +1,11 @@
 <?php
 
-require_once(__DIR__ . '/../vendor/autoload.php');
+require_once(__DIR__ . '/../../vendor/autoload.php');
 
 use DI\Container;
 use Tpab\Router\Router;
-use LearningApp\ControllerExample;
-use LearningApp\DIContainerAdapter;
+use Tpab\Demo\ControllerExample;
+use Tpab\Demo\DIContainerAdapter;
 
 $container = new DI\Container();
 // $container->set(ControllerExample::class, function () {
