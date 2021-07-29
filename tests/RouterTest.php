@@ -1,8 +1,8 @@
 <?php
 
-namespace LearningTests;
+namespace Tpab\Router\Tests;
 
-use Learning\Router;
+use Tpab\Router\Router;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase
@@ -38,7 +38,7 @@ final class RouterTest extends TestCase
     public function testCanResolveClosureRoute()
     {
         $router = new Router('get', '/test');
-        $router->get('/test', function() {
+        $router->get('/test', function () {
             return 'Test';
         });
         $route = $router->resolve();
@@ -56,7 +56,7 @@ final class RouterTest extends TestCase
     public function testCanResolveRouteClousureWithParameter()
     {
         $router = new Router('get', '/test/123');
-        $router->get('/test/{:id}', function($id) {
+        $router->get('/test/{:id}', function ($id) {
             return 'Test Id: ' . $id;
         });
         $route = $router->resolve();
@@ -75,10 +75,10 @@ final class RouterTest extends TestCase
     {
         $router = new Router('get', '/test/123');
         $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-        $router->get('/test/{:id}/{:action}', function($id, $action='') {
+        $router->get('/test/{:id}/{:action}', function ($id, $action='') {
             return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
         });
-        
+
         $route = $router->resolve();
         $this->assertEquals('Testing Controller Id: 123', $route);
     }
@@ -87,7 +87,7 @@ final class RouterTest extends TestCase
     {
         $router = new Router('get', '/test/123/edit');
         $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-        $router->get('/test/{:id}/{:action}', function($id, $action) {
+        $router->get('/test/{:id}/{:action}', function ($id, $action) {
             return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
         });
         $route = $router->resolve();
@@ -97,7 +97,7 @@ final class RouterTest extends TestCase
     public function testCanReturnPageNotFound()
     {
         $router = new Router('get', '/test');
-        $router->get('/', 'Test');        
+        $router->get('/', 'Test');
         $route = $router->resolve();
         $this->assertEquals('Page Not Found', $route);
     }

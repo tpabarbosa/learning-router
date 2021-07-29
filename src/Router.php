@@ -1,6 +1,6 @@
 <?php
 
-namespace Learning;
+namespace Tpab\Router;
 
 class Router
 {
@@ -71,9 +71,9 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function post(string $path, $callback)
+    public function post(string $path, $callback, $params = array())
     {
-        $this->add('post', $path, $callback);
+        $this->add('post', $path, $callback, $params);
     }
 
     /**
@@ -143,7 +143,7 @@ class Router
             return 'Page Not Found';
         }
         $params = array_merge($params, $this->routes_const_params[$method][$path]);
-        
+
         if ($this->container) {
             return $this->containerResolver("$method.$path", $params);
         }

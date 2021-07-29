@@ -1,6 +1,6 @@
 <?php
 
-namespace Learning;
+namespace Tpab\Router;
 
 interface IRouterContainer
 {

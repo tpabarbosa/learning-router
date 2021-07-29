@@ -3,7 +3,7 @@
 require_once(__DIR__ . '/../vendor/autoload.php');
 
 use DI\Container;
-use Learning\Router;
+use Tpab\Router\Router;
 use LearningApp\ControllerExample;
 use LearningApp\DIContainerAdapter;
 
@@ -26,8 +26,9 @@ $router->get('/closure/{:id}', function ($id, $teste) {
     return 'Testing Closure ' . $teste. ' ' . $id;
 }, ['teste' => 'My Test']);
 
-$router->get('/controller/{:test}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
 $router->get('/controller', [ControllerExample::class, 'index']);
+$router->get('/controller/{:test}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
+
 
 
 echo $router->resolve();
