@@ -1,5 +1,5 @@
 {
-    "name": "tpab/router",
+    "name": "tpabarbosa/router",
     "description": "Project to learn how routers work",
     "type": "library",
     "license": "MIT",
@@ -16,13 +16,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Tpab\\Router\\": "src/",
-            "Tpab\\Demo\\": "demo/app/"
+            "tpab\\Router\\": "src/",
+            "tpab\\Router\\Demo\\": "demo/app/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tpab\\Router\\Tests\\": "tests/"
+            "tpab\\Router\\Tests\\": "tests/"
         }
     }
 }

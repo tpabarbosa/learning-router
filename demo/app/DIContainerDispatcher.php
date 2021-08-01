@@ -1,11 +1,11 @@
 <?php
 
-namespace Tpab\Demo;
+namespace tpab\Router\Demo;
 
 use DI\Container;
-use Tpab\Router\IRouterContainer;
+use tpab\Router\DispatcherInterface;
 
-class DIContainerAdapter implements IRouterContainer
+class DIContainerDispatcher implements DispatcherInterface
 {
     private $container;
 
@@ -23,7 +23,7 @@ class DIContainerAdapter implements IRouterContainer
         }
     }
 
-    public function get($route, $parameters)
+    public function dispatch($route, $parameters)
     {
         $to_return = $this->container->get($route);
 
@@ -31,6 +31,7 @@ class DIContainerAdapter implements IRouterContainer
             if (is_array($to_return)) {
                 $to_return[0] = $this->container->make($to_return[0], $parameters);
             }
+            var_dump($to_return);
             $to_return = $this->container->call($to_return, $parameters);
         }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tpab\Demo;
+namespace tpab\Router\Demo;
 
 class ControllerExample
 {
@@ -12,6 +12,7 @@ class ControllerExample
 
     public function index()
     {
+
         return "Testing Controller Without Method Parameters " . $this->teste;
     }
 

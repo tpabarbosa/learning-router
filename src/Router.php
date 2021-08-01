@@ -1,56 +1,39 @@
 <?php
 
-namespace Tpab\Router;
+namespace tpab\Router;
+
+use tpab\Router\Route;
+use tpab\Router\RouteResolved;
+use tpab\Router\DispatcherInterface;
+use tpab\Router\DispatcherNotAssignedException;
 
 class Router
 {
     /**
-     * The current registered callbacks by routes methods and paths
-     * routes[method][path] = callback
+     * The dispatcher
      *
-     * @var string|array|\Closure[]
+     * @var DispatcherInterface
      */
-    private $routes = array();
+    private $dispatcher;
 
     /**
-     * The current registered parameters keys by routes methods and paths
-     * routes_params[method][path] = [key1, key2]
+     * Collection of Route instances
      *
-     * @var array
+     * @var RouteCollection
      */
-    private $routes_params = array();
+    private $collection;
 
-    private $routes_const_params = array();
-
+    private $groups = array();
 
     /**
-     * The request method
      *
-     * @var string
+     * @param DispatcherInterface $dispatcher
      */
-    private $method;
-
-    /**
-     * The request path
-     *
-     * @var string
-     */
-    private $path;
-
-    /**
-     * The DI container adapter
-     *
-     * @var string
-     */
-    private $container;
-
-    public function __construct(string $method, string $path, IRouterContainer $container = null)
+    public function __construct(DispatcherInterface $dispatcher = null)
     {
-        $this->method = $method;
-        $this->path = $path;
-        $this->container = $container;
+        $this->dispatcher = $dispatcher;
+        $this->collection = new RouteCollection();
     }
-
 
     /**
      * Register a GET route
@@ -59,9 +42,9 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function get(string $path, $callback, $params = array())
+    public function get(string $path, $callback, $callback_params = array())
     {
-        $this->add('get', $path, $callback, $params);
+        $this->add('GET', $path, $callback, $callback_params);
     }
 
     /**
@@ -71,153 +54,92 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function post(string $path, $callback, $params = array())
+    public function post(string $path, $callback, $callback_params = array())
     {
-        $this->add('post', $path, $callback, $params);
+        $this->add('POST', $path, $callback, $callback_params);
     }
 
     /**
-     * Register a route to router
+     * Register a route to router collection
      *
-     * @param string $method get|post
+     * @param string|array $methods get|post
      * @param string $path
      * @param string|array|\Closure $callback
+     * @param array $callback_params
      * @return void
      */
-    private function add(string $method, string $path, $callback, $params)
+    public function add($methods, string $path, $callback, array $callback_params = [])
     {
-        $this->routes[$method][$path] = $callback;
-        $this->routes_params[$method][$path] = $this->setRouteParams($path);
-        $this->routes_const_params[$method][$path] = $params;
-        if ($this->container) {
-            $this->container->add("$method.$path", $callback);
-        }
+        $this->collection->addRoute(new Route($methods, $path, $callback, $callback_params));
     }
 
-    private function setRouteParams(string $path)
+    public function group($group_path)
     {
-        $params=[];
-        preg_match_all('/\/{:\w+}/', $path, $matches);
-
-        foreach ($matches[0] as $param) {
-            $params[] = str_replace(['/{:','}'], '', $param);
-        }
-
-        return $params;
+        $group = new RouteGroup($group_path);
+        $this->groups[] = $group;
+        return $group;
     }
-
-
     /**
-     * Determine if router has a route registered
-     *
-     * @param string $method
-     * @param string $path
-     * @return bool
-     */
-    public function hasRoute(string $method, string $path): bool
-    {
-        return isset($this->routes[strtolower($method)][$path]);
-    }
-
-    /**
-     * Returns callback for the route
+     * Returns resolved array of actual route
      *
      * @param string $method
      * @param string $path
      * @return mixed
      */
-    public function resolve()
+    public function resolve(string $method, string $path)
     {
-        $method = $this->method;
-        $path = $this->path;
-        $params = [];
+        $status = RouteResolved::PATH_NOT_FOUND;
+        $method = strtoupper($method);
+        $path = strlen($path) > 1 ? rtrim($path, '/') : $path;
+        
+        if ($this->collection->hasRoute($path)) {
+            $route = $this->collection->findRoute($path);
+            $status = RouteResolved::METHOD_NOT_ALLOWED;
+            $allowed_methods = $route->methods();
 
-        if (! $this->hasRoute($method, $path)) {
-            $routeParams = $this->checkRouteParams();
-            $path = $routeParams['path'] ?? '';
-            $params = $routeParams['params'];
-        }
+            if (in_array($method, $route->methods())) {
+                $status = RouteResolved::FOUND;
+                $callback = $route->callback($method);
+                $path_params = $this->resolveParams($path, $route);
+                $callback_params = $route->callbackParams($method);
+            }
 
-        $callback = $this->routes[$method][$path] ?? '';
-        if (!$callback) {
-            return 'Page Not Found';
-        }
-        $params = array_merge($params, $this->routes_const_params[$method][$path]);
-
-        if ($this->container) {
-            return $this->containerResolver("$method.$path", $params);
-        }
-        return $this->routerResolver($callback, $params);
-    }
-
-    private function containerResolver($route, $params)
-    {
-        return $this->container->get($route, $params);
-    }
-
-    private function routerResolver($callback, $params)
-    {
-        if (is_string($callback)) {
-            return $callback;
-        }
-
-        if (is_array($callback)) {
-            $callback[0] = new $callback[0]();
-        }
-
-        return call_user_func_array($callback, $params);
-    }
-
-    private function checkRouteParams()
-    {
-        $method = $this->method;
-
-        foreach ($this->routes[$method] as $route => $callback) {
-            preg_match_all('/\/{:\w+}/', $route, $matches);
-
-            if ($matches[0]) {
-                $resolvedParams = $this->resolveParams($route, $matches);
-                $path = $resolvedParams['path'];
-
-                if ($this->hasRoute($method, $path)) {
-                    return $resolvedParams;
+            
+            
+        } else {
+            foreach ($this->groups as $group) {
+                if ($group->hasRoute($method, $path)) {
+                    return $group->hasRoute($method, $path);
                 }
             }
         }
+        $resolved = compact('status', 'method', 'path', 'allowed_methods', 'path_params', 'callback', 'callback_params');
+        
+        return new RouteResolved($resolved);
+        
     }
 
-    private function resolveParams($route, $matches)
+    private function resolveParams($path, $route) 
     {
-        $path = $this->path;
-        $method = $this->method;
+        $parts = explode('/', ltrim($path, '/'));
+        $path_params = [];
 
-        $exploded_route = explode('/', $route);
-        $exploded_path = explode('/', $path);
-
-        if (count($exploded_path) > count($exploded_route)) {
-            return [
-                'path' => '',
-                'params' => []
-            ];
-        }
-        $params = [];
-        $param = 0;
-        $params_list = $this->routes_params[$method][$route] ?? [];
-
-        foreach ($exploded_path as $key => $value) {
-            if (isset($params_list[$param]) && preg_match('/{:\w+}/', $exploded_route[$key])) {
-                $params = array_merge($params, [ $params_list[$param] => $exploded_path[$key]]);
-                $param++;
+        foreach ($route->parts() as $key => $value) {
+            if ($parts[$key] !== $value) {
+                $path_params[$value] = $parts[$key];
             }
+        };
+        return $path_params;
+    }
 
-            if (isset($params_list[$param]) && ! preg_match('/{:\w+}/', $exploded_route[$key]) && $exploded_path[$key] !== $exploded_route[$key]) {
-                $exploded_route[$key] = $exploded_path[$key];
-            }
+    public function dispatch(string $method, string $path)
+    {
+        if (! $this->dispatcher) {
+            throw new DispatcherNotAssignedException();
         }
 
-        return [
-            'path' => implode('/', $exploded_route),
-            'params' => $params
-        ];
+        $resolved_route = $this->resolve($method, $path);
+
+        return $this->dispatcher->dispatch($resolved_route, 'a');
     }
 }

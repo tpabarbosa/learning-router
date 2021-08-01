@@ -1,53 +1,46 @@
 <?php
 
 require_once(__DIR__ . '/../../vendor/autoload.php');
+require_once(__DIR__ . '/../app/Utils.php');
 
 use DI\Container;
-use Tpab\Router\Router;
-use Tpab\Demo\ControllerExample;
-use Tpab\Demo\DIContainerAdapter;
+use tpab\Router\Router;
+use tpab\Router\Demo\ControllerExample;
+use tpab\Router\Demo\DIContainerDispatcher;
 
 $container = new DI\Container();
-// $container->set(ControllerExample::class, function () {
-//     return new ControllerExample('With Constructor Parameters');
-// });
-$container_adapter = new DIContainerAdapter($container);
+$container->set(ControllerExample::class, function ($teste) {
+    return new ControllerExample($teste);
+});
+$dispatcher = new DIContainerDispatcher($container);
 
 
-$router = new Router(method(), path(), $container_adapter);//);//
-
+$router = new Router();//$dispatcher);//);//
 
 $router->get('/', 'Main Page');
 $router->get('/test', 'Test Page');
 $router->get('/closure', function ($teste) {
     return 'Testing Closure ' . $teste ;
 }, ['teste' => 'My Test']);
-$router->get('/closure/{:id}', function ($id, $teste) {
+$router->get('/closure/{id}', function ($id, $teste) {
     return 'Testing Closure ' . $teste. ' ' . $id;
 }, ['teste' => 'My Test']);
 
 $router->get('/controller', [ControllerExample::class, 'index']);
-$router->get('/controller/{:test}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
+$router->get('/controller/{id:[\d]+}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
 
+$router->get('/controller/{id:[\d]+}/{b}/{value:[([:alpha:]:_)]+}', [ControllerExample::class, 'test']);
+$router->post('/post', 'Testing Post');
+$router->add('PATCH', '/post', 'Testing Patch');
+$router->add(['PATCH', 'delete'], '/test', 'Testing array methods');
 
+$group = $router->group('/group')
+    ->add('get', '/', 'First testing group')
+    ->add('get', '/new', 'Second testing group');
+//$group->add('get', '/', 'First testing group');
+var_dump($group);
 
-echo $router->resolve();
+$route_resolved = $router->resolve(method(), path());
 
-
-
-function path()
-{
-    $path = $_SERVER['REQUEST_URI'] ?? '/';
-    $position = strpos($path, '?');
-    if ($position === false) {
-        return $path;
-    }
-
-    return substr($path, 0, $position);
-}
-
-function method()
-{
-    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    return strtolower($method);
-}
+echo nl2br($route_resolved);
+//echo $router->dispatch(method(), path());

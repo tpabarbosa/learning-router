@@ -1,8 +1,8 @@
 <?php
 
-namespace Tpab\Router\Tests;
+namespace tpab\Router\Tests;
 
-use Tpab\Router\Router;
+use tpab\Router\Router;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase
