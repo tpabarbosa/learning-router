@@ -45,6 +45,7 @@ class Router
      */
     public static function get(string $path, $callback, $callback_params = array())
     {
+        self::initialize();
         return self::$routes->add('GET', $path, $callback, $callback_params);
     }
 
@@ -57,11 +58,13 @@ class Router
      */
     public static function post(string $path, $callback, $callback_params = array())
     {
+        self::initialize();
         return self::$routes->add('POST', $path, $callback, $callback_params);
     }
 
     public static function add($methods, string $path, $callback, array $callback_params = [])
     {
+        self::initialize();
         return self::$routes->add($methods, $path, $callback, $callback_params);
     }
 
@@ -77,14 +80,13 @@ class Router
 
     public static function group($group_path)
     {
+        self::initialize();
         return self::$routes->group($group_path);
     }
 
     public static function resolve($method, $path, DispatcherInterface $dispatcher = null)
     {
-        if (! self::$initialized) {
-            self::init($dispatcher);
-        }
+        self::initialize($dispatcher);
         return self::$routes->resolve($method, $path);
     }
 
@@ -97,5 +99,12 @@ class Router
         //$resolved_route = $this->resolve($method, $path);
 
         return null;//$this->dispatcher->dispatch($resolved_route, 'a');
+    }
+
+    private static function initialize(DispatcherInterface $dispatcher = null)
+    {
+        if (! self::$initialized) {
+            self::init($dispatcher);
+        }
     }
 }
