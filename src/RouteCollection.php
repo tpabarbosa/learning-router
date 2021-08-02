@@ -54,10 +54,9 @@ class RouteCollection
                 $callback_params = $route->callbackParams($method);
             }
         } else {
-            
             foreach ($groups as $group) {
-                if ($group->hasRoute($method, $path)) {
-                    return $group->hasRoute($method, $path);
+                if ($group->resolve($method, $path)) {
+                    return $group->resolve($method, $path);
                 }
             }
         }

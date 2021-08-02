@@ -18,6 +18,7 @@ $dispatcher = new DIContainerDispatcher($container);
 $router = new Router();//$dispatcher);//);//
 
 $router->get('/', 'Main Page');
+
 $router->get('/test', 'Test Page');
 $router->get('/closure', function ($teste) {
     return 'Testing Closure ' . $teste ;
@@ -37,9 +38,7 @@ $router->add(['PATCH', 'delete'], '/test', 'Testing array methods');
 $group = $router->group('/group')
     ->add('get', '/', 'First testing group')
     ->add('get', '/new', 'Second testing group');
-//$group->add('get', '/', 'First testing group');
-var_dump($group);
-
+    
 $route_resolved = $router->resolve(method(), path());
 
 echo nl2br($route_resolved);
