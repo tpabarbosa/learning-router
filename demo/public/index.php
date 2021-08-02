@@ -3,43 +3,42 @@
 require_once(__DIR__ . '/../../vendor/autoload.php');
 require_once(__DIR__ . '/../app/Utils.php');
 
-use DI\Container;
+//use DI\Container;
 use tpab\Router\Router;
 use tpab\Router\Demo\ControllerExample;
-use tpab\Router\Demo\DIContainerDispatcher;
+//use tpab\Router\Demo\DIContainerDispatcher;
 
-$container = new DI\Container();
-$container->set(ControllerExample::class, function ($teste) {
-    return new ControllerExample($teste);
-});
-$dispatcher = new DIContainerDispatcher($container);
+// $container = new DI\Container();
+// $container->set(ControllerExample::class, function ($teste) {
+//     return new ControllerExample($teste);
+// });
+// $dispatcher = new DIContainerDispatcher($container);
 
+Router::init();
 
-$router = new Router();//$dispatcher);//);//
+Router::get('/', 'Main Page');
 
-$router->get('/', 'Main Page');
-
-$router->get('/test', 'Test Page');
-$router->get('/closure', function ($teste) {
+Router::get('/test', 'Test Page');
+Router::get('/closure', function ($teste) {
     return 'Testing Closure ' . $teste ;
 }, ['teste' => 'My Test']);
-$router->get('/closure/{id}', function ($id, $teste) {
+Router::get('/closure/{id}', function ($id, $teste) {
     return 'Testing Closure ' . $teste. ' ' . $id;
 }, ['teste' => 'My Test']);
 
-$router->get('/controller', [ControllerExample::class, 'index']);
-$router->get('/controller/{id:[\d]+}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
+Router::get('/controller', [ControllerExample::class, 'index']);
+Router::get('/controller/{id:[\d]+}', [ControllerExample::class, 'test'], ['teste' => 'My Test']);
 
-$router->get('/controller/{id:[\d]+}/{b}/{value:[([:alpha:]:_)]+}', [ControllerExample::class, 'test']);
-$router->post('/post', 'Testing Post');
-$router->add('PATCH', '/post', 'Testing Patch');
-$router->add(['PATCH', 'delete'], '/test', 'Testing array methods');
+Router::get('/controller/{id:[\d]+}/{b}/{value:[([:alpha:]:_)]+}', [ControllerExample::class, 'test']);
+Router::post('/post', 'Testing Post');
+Router::add('PATCH', '/post', 'Testing Patch');
+Router::add(['PATCH', 'delete'], '/test', 'Testing array methods');
 
-$group = $router->group('/group')
+Router::group('/group')
     ->add('get', '/', 'First testing group')
     ->add('get', '/new', 'Second testing group');
-    
-$route_resolved = $router->resolve(method(), path());
+
+$route_resolved = Router::resolve(method(), path());
 
 echo nl2br($route_resolved);
 //echo $router->dispatch(method(), path());

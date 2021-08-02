@@ -40,31 +40,7 @@ class RouteGroup
         return $this;
     }
 
-/**
-     * Register a GET route
-     *
-     * @param string $path
-     * @param string|array|\Closure $callback
-     * @return void
-     */
-    public function get(string $path, $callback, $callback_params = array())
-    {
-        return $this->add('GET', $path, $callback, $callback_params);
-    }
-
-    /**
-     * Register a POST route
-     *
-     * @param string $path
-     * @param string|array|\Closure $callback
-     * @return void
-     */
-    public function post(string $path, $callback, $callback_params = array())
-    {
-        return $this->add('POST', $path, $callback, $callback_params);
-    }
-
-    public function resolve($method, $path)
+    public function resolve(string $method, string $path)
     {
         return $this->collection->resolveRoute($method, $path, $this->groups);
     }
