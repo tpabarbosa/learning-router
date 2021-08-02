@@ -88,48 +88,7 @@ class Router
      */
     public function resolve(string $method, string $path)
     {
-        $status = RouteResolved::PATH_NOT_FOUND;
-        $method = strtoupper($method);
-        $path = strlen($path) > 1 ? rtrim($path, '/') : $path;
-        
-        if ($this->collection->hasRoute($path)) {
-            $route = $this->collection->findRoute($path);
-            $status = RouteResolved::METHOD_NOT_ALLOWED;
-            $allowed_methods = $route->methods();
-
-            if (in_array($method, $route->methods())) {
-                $status = RouteResolved::FOUND;
-                $callback = $route->callback($method);
-                $path_params = $this->resolveParams($path, $route);
-                $callback_params = $route->callbackParams($method);
-            }
-
-            
-            
-        } else {
-            foreach ($this->groups as $group) {
-                if ($group->hasRoute($method, $path)) {
-                    return $group->hasRoute($method, $path);
-                }
-            }
-        }
-        $resolved = compact('status', 'method', 'path', 'allowed_methods', 'path_params', 'callback', 'callback_params');
-        
-        return new RouteResolved($resolved);
-        
-    }
-
-    private function resolveParams($path, $route) 
-    {
-        $parts = explode('/', ltrim($path, '/'));
-        $path_params = [];
-
-        foreach ($route->parts() as $key => $value) {
-            if ($parts[$key] !== $value) {
-                $path_params[$value] = $parts[$key];
-            }
-        };
-        return $path_params;
+        return $this->collection->resolveRoute($method, $path, $this->groups);
     }
 
     public function dispatch(string $method, string $path)
