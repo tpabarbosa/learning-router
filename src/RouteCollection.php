@@ -19,12 +19,21 @@ class RouteCollection
         }
     }
 
-    private function addRouteMethods($route, $methods, $callback, $callback_params)
+    /**
+     * Undocumented function
+     *
+     * @param Route $route
+     * @param array|string $methods
+     * @param array|string|\Clousure $callback
+     * @param array $callback_params
+     * @return void
+     */
+    private function addRouteMethods(Route $route, $methods, $callback, array $callback_params)
     {
         $route->addMethods($methods, $callback, $callback_params);
     }
 
-    public function findRoute($path)
+    public function findRoute(string $path)
     {
         $found = array_filter($this->routes, function ($route) use ($path) {
             preg_match($route->regex(), $path, $matches);
@@ -36,7 +45,7 @@ class RouteCollection
         return reset($found);
     }
 
-    public function resolveRoute($method, $path, $groups = [])
+    public function resolveRoute(string $method, string $path, array $groups = [])
     {
         $status = RouteResolved::PATH_NOT_FOUND;
         $method = strtoupper($method);
@@ -65,7 +74,7 @@ class RouteCollection
         return new RouteResolved($resolved);
     }
 
-    private function resolveParams($path, $route)
+    private function resolveParams(string $path, Route $route)
     {
         $parts = explode('/', ltrim($path, '/'));
         $path_params = [];
@@ -78,18 +87,8 @@ class RouteCollection
         return $path_params;
     }
 
-    public function hasRoute($path)
+    public function hasRoute(string $path)
     {
         return !empty($this->findRoute($path));
-    }
-
-    public function findRoutesWithParameters()
-    {
-        return array_filter($this->routes, function ($route) {
-            if ($route->parameters() !== []) {
-                return true;
-            }
-            return false;
-        });
     }
 }

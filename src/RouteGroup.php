@@ -7,7 +7,7 @@ use tpab\Router\Route;
 class RouteGroup
 {
     private $collection = array();
-    
+
     private $group_path;
 
     /**
@@ -21,7 +21,6 @@ class RouteGroup
     {
         $this->group_path = $group_path;
         $this->collection = new RouteCollection();
-        
     }
 
     public function group($group_path)
@@ -45,4 +44,8 @@ class RouteGroup
         return $this->collection->resolveRoute($method, $path, $this->groups);
     }
 
+    public function hasRoute($path)
+    {
+        return $this->collection->hasRoute($path);
+    }
 }
