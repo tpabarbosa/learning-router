@@ -60,19 +60,22 @@ class Route
             throw new \Exception("Route method cannot be empty.");
         }
         if (! is_array($methods)) {
-            throw new \Exception("Route methods must be an array.");
+            throw new \Exception("Route methods must be strings inside the array.");
         }
-
-        $methods = array_map('strtoupper', $methods);
+        
         foreach ($methods as $method) {
-            if (! in_array($method, self::VERBS)) {
+            if (! is_string($method)) {
+                throw new \Exception("Route methods must be strings inside the array.");
+            }
+            if (! in_array(self::toUpper($method), self::VERBS)) {
                 throw new \Exception("Unknown method: $method.");
             }
-            if (in_array($method, $this->methods)) {
+            if (in_array(self::toUpper($method), $this->methods)) {
                 throw new \Exception("Method $method already exists.");
             }
         }
 
+        $methods = array_map('strtoupper', $methods);
         return $methods;
     }
 
@@ -81,7 +84,6 @@ class Route
         if (empty($path)) {
             throw new \Exception("Route path cannot be empty.");
         }
-
         return $path;
     }
 
@@ -142,6 +144,7 @@ class Route
 
     public function callback($method)
     {
+        $method = self::toUpper($method);
         $callback = $this->filterCallback($method);
         return $callback['callback'];
     }
@@ -159,6 +162,7 @@ class Route
 
     public function callbackParams($method)
     {
+        $method = self::toUpper($method);
         $callback = $this->filterCallback($method);
         return $callback['callback_params'];
 
@@ -166,6 +170,12 @@ class Route
 
     public function hasMethod($method)
     {
-        return isset($this->methods[$method]);
+        $method = self::toUpper($method);
+        return in_array($method, $this->methods);
+    }
+
+    private static function toUpper($string)
+    {
+        return strtoupper($string);
     }
 }

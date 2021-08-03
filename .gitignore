@@ -3,3 +3,4 @@
 /logs/access.log
 /logs/error.log
 /.vscode/
+/tests/build/

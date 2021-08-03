@@ -7,9 +7,25 @@
         beStrictAboutCoversAnnotation="true">
 
     <testsuites>
-        <testsuite name="Router">
+        <testsuite name="router">
             <file>tests/RouterTest.php</file>
+            <file>tests/RouteTest.php</file>
+        </testsuite>
+        <testsuite name="units">
+            <file>tests/RouteTest.php</file>
         </testsuite>
     </testsuites>
+    <filter>
+    <whitelist>
+        <directory suffix=".php">src/</directory>
+    </whitelist>
+    </filter>
+    <logging>
+        <log type="tap" target="tests/build/report.tap"/>
+        <log type="junit" target="tests/build/report.junit.xml"/>
+        <log type="coverage-html" target="tests/build/coverage" charset="UTF-8" yui="true" highlight="true"/>
+        <log type="coverage-text" target="tests/build/coverage.txt"/>
+        <log type="coverage-clover" target="tests/build/logs/clover.xml"/>
+    </logging>
 </phpunit>
 

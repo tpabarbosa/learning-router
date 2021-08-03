@@ -38,21 +38,21 @@ class RouteResolved
      */
     private $allowed_methods;
 
-        /**
+    /**
      * The path parameters
      *
      * @var array
      */
     private $path_params;
 
-        /**
+    /**
      * The callback
      *
      * @var array|string|\Closure|null
      */
     private $callback;
 
-        /**
+    /**
      * The callback parameters
      *
      * @var array
@@ -60,7 +60,7 @@ class RouteResolved
     private $callback_params;
 
     /**
-     * 
+     *
      * @param integer $status
      * @param string $method
      * @param string $path
@@ -97,11 +97,6 @@ class RouteResolved
         return $this->path;
     }
 
-    public function route()
-    {
-        return $this->route ? $this->route->path() : null;
-    }
-
     public function callback()
     {
         return $this->callback;
@@ -127,14 +122,13 @@ class RouteResolved
         switch ($this->status) {
             case self::PATH_NOT_FOUND:
                 return "Path '{$this->path}' was not found.";
-                break;
-            case self::FOUND:
-                return "{$this->path} [{$this->method}]";
-                break;
+            // case self::FOUND:
+            //     return "{$this->path} [{$this->method}]";
+            //     break;
             case self::METHOD_NOT_ALLOWED:
                 $allowed = implode(', ', $this->allowedMethods());
                 return "Method '{$this->method}' is not allowed to path '{$this->path}'. \r\n Please try one of this methods: [{$allowed}].";
         }
-        
+        return "{$this->path} [{$this->method}]";
     }
 }
