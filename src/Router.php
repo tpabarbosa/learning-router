@@ -4,7 +4,7 @@ namespace tpab\Router;
 
 use tpab\Router\DispatcherInterface;
 use tpab\Router\DispatcherNotAssignedException;
-use tpab\Router\RouterIsAlredyInitializedException;
+use tpab\Router\RouterIsAlreadyInitializedException;
 
 class Router
 {
@@ -73,12 +73,24 @@ class Router
     public static function init(DispatcherInterface $dispatcher = null)
     {
         if (self::$initialized) {
-            throw new RouterIsAlredyInitializedException('Router is already initialized.');
+            throw new RouterIsAlreadyInitializedException('Router is already initialized.');
         }
         self::$initialized = true;
         self::$dispatcher = $dispatcher;
         self::$routes = new RouteGroup('');
         self::$instance = new self();
+
+        return self::$instance;
+    }
+
+    public static function close()
+    {
+        if (!self::$initialized) {
+            throw new \Exception('Router is not initialized.');
+        }
+        self::$initialized = false;
+        self::$dispatcher = null;
+        self::$routes = null;
 
         return self::$instance;
     }
@@ -89,9 +101,9 @@ class Router
         return self::$routes->group($group_path);
     }
 
-    public static function resolve($method, $path, DispatcherInterface $dispatcher = null)
+    public static function resolve($method, $path)
     {
-        self::initialize($dispatcher);
+        self::initialize();
         return self::$routes->resolve($method, $path);
     }
 
@@ -106,14 +118,14 @@ class Router
         return null;//$this->dispatcher->dispatch($resolved_route, 'a');
     }
 
-    private static function initialize(DispatcherInterface $dispatcher = null)
+    private static function initialize()
     {
         if (! self::$initialized) {
-            self::init($dispatcher);
+            self::init();
         }
     }
 
-    public static function hasRoute($path) 
+    public static function hasRoute($path)
     {
         return self::$routes->hasRoute($path);
     }
