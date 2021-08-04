@@ -64,8 +64,9 @@ class RouteCollection
             }
         } else {
             foreach ($groups as $group) {
-                if ($group->resolve($method, $path)) {
-                    return $group->resolve($method, $path);
+                $route = $group->resolve($method, $path);
+                if ($route->status() === RouteResolved::FOUND) {
+                    return $route;
                 }
             }
         }
