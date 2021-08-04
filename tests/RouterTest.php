@@ -3,9 +3,10 @@
 namespace tpab\Router\Tests;
 
 use tpab\Router\Router;
+use tpab\Router\RouteGroup;
 use tpab\Router\RouteResolved;
 use PHPUnit\Framework\TestCase;
-use tpab\Router\RouterIsAlredyInitializedException;
+use tpab\Router\RouterIsAlreadyInitializedException;
 
 final class RouterTest extends TestCase
 {
@@ -18,9 +19,27 @@ final class RouterTest extends TestCase
         $this->assertInstanceOf(Router::class, $this->router);
     }
 
+    public function testCanBeClosed()
+    {
+        $this->router = Router::close();
+        $this->assertInstanceOf(Router::class, $this->router);
+    }
+
+    public function testCanNotBeClosedTwice()
+    {
+        $this->expectException(\Exception::class);
+        $this->router = Router::close();
+    }
+
+    public function testCanSelfInitialize()
+    {
+        Router::add('get', '/test', 'Test');
+        $this->assertTrue(Router::hasRoute('/test'));
+    }
+
     public function testCanNotBeInitiatedTwice()
     {
-        $this->expectException(RouterIsAlredyInitializedException::class);
+        $this->expectException(RouterIsAlreadyInitializedException::class);
         $this->router = Router::init();
     }
 
@@ -114,79 +133,36 @@ final class RouterTest extends TestCase
         $this->assertEquals("Method 'GET' is not allowed to path '/postTest'. \r\n Please try one of this methods: [POST].", (string) $route);
     }
 
-    public function testCanResolveRouteWithParameters()
+    public function testCanResolveRouteWithParameter()
     {
-        $route = Router::resolve('get', '/getTest');
-        $this->assertInstanceOf(RouteResolved::class, $route);
-        $this->assertEquals('/getTest', $route->path());
-        $this->assertEquals('1', $route->status());
+        Router::get('/parameter/{value}', 'Simple Parameter');
+        $route = Router::resolve('get', '/parameter/some_value');
+        $this->assertEquals('Simple Parameter', $route->callback());
+        $this->assertEquals(['value' => 'some_value'], $route->parameters());
     }
 
-    // public function testCanResolveClosureRoute()
-    // {
-    //     Router::get('/closureTest', function () {
-    //         return 'Closure Test';
-    //     });
-    //     $route = Router::resolve('get', '/closureTest');
-    //     $this->assertEquals('Closure Test', $route->path());
-    // }
+    public function testCanResolveRouteWithParameterRegex()
+    {
+        Router::get('/parameter/regex/{value:[\d]+}', 'Parameter with Regex');
+        $route = Router::resolve('get', '/parameter/regex/123');
+        $this->assertEquals('Parameter with Regex', $route->callback());
+        $this->assertEquals(['value' => '123'], $route->parameters());
+    }
 
-    // public function testCanResolveControllerRoute()
-    // {
-    //     Router::get('/controllerTest',[ControllerMock::class, 'index']);
-    //     $route = Router::resolve('get', '/controllerTest');
-    //     var_dump($route->path());
-    //     $this->assertEquals('Testing Controller', $route->path());
-    // }
+    public function testCanCreateGroup()
+    {
+        $group = Router::group('/groupTest');
+        $this->assertInstanceOf(RouteGroup::class, $group);
+    }
 
-    // public function testCanResolveRouteClousureWithParameter()
-    // {
-    //     $router = new Router('get', '/test/123');
-    //     $router->get('/test/{:id}', function ($id) {
-    //         return 'Test Id: ' . $id;
-    //     });
-    //     $route = $router->resolve();
-    //     $this->assertEquals('Test Id: 123', $route);
-    // }
-
-    // public function testCanResolveRouteControllerWithParameter()
-    // {
-    //     $router = new Router('get', '/test/123');
-    //     $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-    //     $route = $router->resolve();
-    //     $this->assertEquals('Testing Controller Id: 123', $route);
-    // }
-
-    // public function testCanResolveRouteWithParameters()
-    // {
-    //     $router = new Router('get', '/test/123');
-    //     $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-    //     $router->get('/test/{:id}/{:action}', function ($id, $action='') {
-    //         return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
-    //     });
-
-    //     $route = $router->resolve();
-    //     $this->assertEquals('Testing Controller Id: 123', $route);
-    // }
-
-    // public function testCanResolveRouteWithParametersNewTest()
-    // {
-    //     $router = new Router('get', '/test/123/edit');
-    //     $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-    //     $router->get('/test/{:id}/{:action}', function ($id, $action) {
-    //         return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
-    //     });
-    //     $route = $router->resolve();
-    //     $this->assertEquals('Test Id: 123' . PHP_EOL . 'Action: edit', $route);
-    // }
-
-    // public function testCanReturnPageNotFound()
-    // {
-    //     $router = new Router('get', '/test');
-    //     $router->get('/', 'Test');
-    //     $route = $router->resolve();
-    //     $this->assertEquals('Page Not Found', $route);
-    // }
+    public function testCanAddRouteToGroup()
+    {
+        Router::group('/group')->add('get', '/new', 'Group Root');
+        $route = Router::resolve('get', '/group/new');
+        $this->assertEquals('1', $route->status());
+        $this->assertEquals('Group Root', $route->callback());
+        
+    }
 }
 
 class ControllerMock
