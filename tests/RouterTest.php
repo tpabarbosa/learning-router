@@ -1,104 +1,167 @@
 <?php
 
-namespace LearningTests;
+namespace tpab\Router\Tests;
 
-use Learning\Router;
+use tpab\Router\Router;
+use tpab\Router\RouteGroup;
+use tpab\Router\RouteResolved;
 use PHPUnit\Framework\TestCase;
+use tpab\Router\RouterIsAlreadyInitializedException;
 
 final class RouterTest extends TestCase
 {
+    private $router;
+
+
     public function testIsInstaceOfRouter()
     {
-        $router = new Router('get', '/');
-        $this->assertInstanceOf(Router::class, $router);
+        $this->router = Router::init();
+        $this->assertInstanceOf(Router::class, $this->router);
+    }
+
+    public function testCanBeClosed()
+    {
+        $this->router = Router::close();
+        $this->assertInstanceOf(Router::class, $this->router);
+    }
+
+    public function testCanNotBeClosedTwice()
+    {
+        $this->expectException(\Exception::class);
+        $this->router = Router::close();
+    }
+
+    public function testCanSelfInitialize()
+    {
+        Router::add('get', '/test', 'Test');
+        $this->assertTrue(Router::hasRoute('/test'));
+    }
+
+    public function testCanNotBeInitiatedTwice()
+    {
+        $this->expectException(RouterIsAlreadyInitializedException::class);
+        $this->router = Router::init();
+    }
+
+    public function testCanAddStringMethodRoute()
+    {
+        Router::add('put', '/test', 'Test');
+        $this->assertTrue(Router::hasRoute('/test'));
+    }
+
+    public function testCanAddArrayMethodsRoute()
+    {
+        Router::add(['get', 'post'], '/array_methods_test', 'Test');
+        $route = Router::resolve('get', '/array_methods_test');
+        $this->assertEquals(['GET', 'POST'], $route->allowedMethods());
+    }
+
+    public function testCanAppendStringMethodToRoute()
+    {
+        Router::add('patch', '/append_methods_test', 'Test');
+        Router::add('delete', '/append_methods_test', 'Test2');
+        $route = Router::resolve('patch', '/append_methods_test');
+        $this->assertEquals(['PATCH', 'DELETE'], $route->allowedMethods());
+        $this->assertEquals('Test', $route->callback());
+        $this->assertEquals('PATCH', $route->method());
+
+        $route = Router::resolve('delete', '/append_methods_test');
+        $this->assertEquals(['PATCH', 'DELETE'], $route->allowedMethods());
+        $this->assertEquals('Test2', $route->callback());
+        $this->assertEquals('DELETE', $route->method());
+    }
+
+    public function testCanAppendArrayMethodsToRoute()
+    {
+        Router::add('patch', '/append_array_methods_test', 'Test', ['var' => 'value']);
+        Router::add(['delete', 'options'], '/append_array_methods_test', 'Test2', ['var2' => 'value2']);
+        $route = Router::resolve('patch', '/append_array_methods_test');
+        $this->assertEquals(['PATCH', 'DELETE', 'OPTIONS'], $route->allowedMethods());
+        $this->assertEquals('Test', $route->callback());
+        $this->assertEquals(['var' => 'value'], $route->callbackParams('patch'));
+
+        $route = Router::resolve('options', '/append_array_methods_test');
+        $this->assertEquals('Test2', $route->callback());
+        $this->assertEquals(['var2' => 'value2'], $route->callbackParams('options'));
     }
 
     public function testCanAddGetRoute()
     {
-        $router = new Router('get', '/');
-        $router->get('/getTest', 'Test');
-        $this->assertTrue($router->hasRoute('get', '/getTest'));
+        Router::get('/getTest', 'Test');
+        $this->assertTrue(Router::hasRoute('/getTest'));
     }
 
     public function testCanAddPostRoute()
     {
-        $router = new Router('post', '/');
-        $router->post('/postTest', 'Test');
-        $this->assertTrue($router->hasRoute('post', '/postTest'));
+        Router::post('/postTest', 'Test');
+        $this->assertTrue(Router::hasRoute('/postTest'));
     }
 
-    public function testCanResolveStringRoute()
+    public function testCanResolveGetRoute()
     {
-        $router = new Router('get', '/test');
-        $router->get('/test', 'Test');
-        $route = $router->resolve();
-        $this->assertEquals('Test', $route);
+        $route = Router::resolve('get', '/getTest');
+        $this->assertInstanceOf(RouteResolved::class, $route);
+        $this->assertEquals('/getTest', $route->path());
+        $this->assertEquals('1', $route->status());
+        $this->assertEquals('/getTest [GET]', (string) $route);
     }
 
-    public function testCanResolveClosureRoute()
+    public function testCanResolvePostRoute()
     {
-        $router = new Router('get', '/test');
-        $router->get('/test', function() {
-            return 'Test';
-        });
-        $route = $router->resolve();
-        $this->assertEquals('Test', $route);
+        $route = Router::resolve('post', '/postTest');
+        $this->assertInstanceOf(RouteResolved::class, $route);
+        $this->assertEquals('/postTest', $route->path());
+        $this->assertEquals('1', $route->status());
     }
 
-    public function testCanResolveControllerRoute()
+    public function testCanResolveNotFoundRoute()
     {
-        $router = new Router('get', '/test');
-        $router->get('/test', [ControllerMock::class, 'index']);
-        $route = $router->resolve();
-        $this->assertEquals('Testing Controller', $route);
+        $route = Router::resolve('post', '/notFoundTest');
+        $this->assertInstanceOf(RouteResolved::class, $route);
+        $this->assertEquals('/notFoundTest', $route->path());
+        $this->assertEquals('0', $route->status());
+        $this->assertEquals("Path '/notFoundTest' was not found.", (string) $route);
     }
 
-    public function testCanResolveRouteClousureWithParameter()
+    public function testCanResolveMethodNotAllowedRoute()
     {
-        $router = new Router('get', '/test/123');
-        $router->get('/test/{:id}', function($id) {
-            return 'Test Id: ' . $id;
-        });
-        $route = $router->resolve();
-        $this->assertEquals('Test Id: 123', $route);
+        $route = Router::resolve('get', '/postTest');
+        $this->assertInstanceOf(RouteResolved::class, $route);
+        $this->assertEquals('/postTest', $route->path());
+        $this->assertEquals('2', $route->status());
+
+        $this->assertEquals("Method 'GET' is not allowed to path '/postTest'. \r\n Please try one of this methods: [POST].", (string) $route);
     }
 
-    public function testCanResolveRouteControllerWithParameter()
+    public function testCanResolveRouteWithParameter()
     {
-        $router = new Router('get', '/test/123');
-        $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-        $route = $router->resolve();
-        $this->assertEquals('Testing Controller Id: 123', $route);
+        Router::get('/parameter/{value}', 'Simple Parameter');
+        $route = Router::resolve('get', '/parameter/some_value');
+        $this->assertEquals('Simple Parameter', $route->callback());
+        $this->assertEquals(['value' => 'some_value'], $route->parameters());
     }
 
-    public function testCanResolveRouteWithParameters()
+    public function testCanResolveRouteWithParameterRegex()
     {
-        $router = new Router('get', '/test/123');
-        $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-        $router->get('/test/{:id}/{:action}', function($id, $action) {
-            return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
-        });
-        $route = $router->resolve();
-        $this->assertEquals('Testing Controller Id: 123', $route);
+        Router::get('/parameter/regex/{value:[\d]+}', 'Parameter with Regex');
+        $route = Router::resolve('get', '/parameter/regex/123');
+        $this->assertEquals('Parameter with Regex', $route->callback());
+        $this->assertEquals(['value' => '123'], $route->parameters());
     }
 
-    public function testCanResolveRouteWithParametersNewTest()
+    public function testCanCreateGroup()
     {
-        $router = new Router('get', '/test/123/edit');
-        $router->get('/test/{:id}', [ControllerMock::class, 'index']);
-        $router->get('/test/{:id}/{:action}', function($id, $action) {
-            return 'Test Id: ' . $id . PHP_EOL . 'Action: ' . $action;
-        });
-        $route = $router->resolve();
-        $this->assertEquals('Test Id: 123' . PHP_EOL . 'Action: edit', $route);
+        $group = Router::group('/groupTest');
+        $this->assertInstanceOf(RouteGroup::class, $group);
     }
 
-    public function testCanReturnPageNotFound()
+    public function testCanAddRouteToGroup()
     {
-        $router = new Router('get', '/test');
-        $router->get('/', 'Test');        
-        $route = $router->resolve();
-        $this->assertEquals('Page Not Found', $route);
+        Router::group('/group')->add('get', '/new', 'Group Root');
+        $route = Router::resolve('get', '/group/new');
+        $this->assertEquals('1', $route->status());
+        $this->assertEquals('Group Root', $route->callback());
+        
     }
 }
 

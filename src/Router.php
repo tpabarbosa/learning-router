@@ -1,45 +1,42 @@
 <?php
 
-namespace Learning;
+namespace tpab\Router;
+
+use tpab\Router\DispatcherInterface;
+use tpab\Router\DispatcherNotAssignedException;
+use tpab\Router\RouterIsAlreadyInitializedException;
 
 class Router
 {
     /**
-     * The current registered callbacks by routes methods and paths
-     * routes[method][path] = callback
+     * The dispatcher
      *
-     * @var string|array|\Closure[]
+     * @var DispatcherInterface
      */
-    private $routes = array();
+    private static $dispatcher;
 
     /**
-     * The current registered parameters keys by routes methods and paths
-     * routes_params[method][path] = [key1, key2]
+     * Collection of Route instances
      *
-     * @var array
+     * @var RouteGroup
      */
-    private $routes_params = array();
+    private static $routes;
 
     /**
-     * The request method
-     * 
-     * @var string
+     * Router is initialized or not
+     *
+     * @var boolean
      */
-    private $method;
+    private static $initialized = false;
 
+    private static $instance = null;
     /**
-     * The request path
-     * 
-     * @var string
+     *
+     * @param DispatcherInterface $dispatcher
      */
-    private $path;
-
-    public function __construct(string $method, string $path)
+    private function __construct()
     {
-        $this->method = $method;
-        $this->path = $path;
     }
-
 
     /**
      * Register a GET route
@@ -48,9 +45,10 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function get(string $path, $callback)
+    public static function get(string $path, $callback, $callback_params = array())
     {
-        $this->add('get', $path, $callback);
+        self::initialize();
+        return self::$routes->add('GET', $path, $callback, $callback_params);
     }
 
     /**
@@ -60,129 +58,75 @@ class Router
      * @param string|array|\Closure $callback
      * @return void
      */
-    public function post(string $path, $callback)
+    public static function post(string $path, $callback, $callback_params = array())
     {
-        $this->add('post', $path, $callback);
+        self::initialize();
+        return self::$routes->add('POST', $path, $callback, $callback_params);
     }
 
-    /**
-     * Register a route to router
-     *
-     * @param string $method get|post
-     * @param string $path
-     * @param string|array|\Closure $callback
-     * @return void
-     */
-    private function add(string $method, string $path, $callback)
+    public static function add($methods, string $path, $callback, array $callback_params = [])
     {
-        $this->routes[$method][$path] = $callback;
-        $this->routes_params[$method][$path] = $this->setRouteParams($path);
+        self::initialize();
+        return self::$routes->add($methods, $path, $callback, $callback_params);
     }
 
-    private function setRouteParams(string $path)
+    public static function init(DispatcherInterface $dispatcher = null)
     {
-        $params=[];
-        preg_match_all('/\/{:\w+}/', $path, $matches);
-        if ($matches[0]) {
-            foreach ($matches[0] as $param) {
-                $params[] = str_replace(['/{:','}'] , '', $param);
-            }
+        if (self::$initialized) {
+            throw new RouterIsAlreadyInitializedException('Router is already initialized.');
         }
-        return $params;
+        self::$initialized = true;
+        self::$dispatcher = $dispatcher;
+        self::$routes = new RouteGroup('');
+        self::$instance = new self();
+
+        return self::$instance;
     }
 
-
-    /**
-     * Determine if router has a route registered
-     *
-     * @param string $method
-     * @param string $path
-     * @return bool
-     */
-    public function hasRoute(string $method, string $path): bool
+    public static function close()
     {
-        return isset($this->routes[strtolower($method)][$path]);
+        if (!self::$initialized) {
+            throw new \Exception('Router is not initialized.');
+        }
+        self::$initialized = false;
+        self::$dispatcher = null;
+        self::$routes = null;
+
+        return self::$instance;
     }
 
-    /**
-     * Returns callback for the route
-     *
-     * @param string $method
-     * @param string $path
-     * @return mixed 
-     */
-    public function resolve()
+    public static function group($group_path)
     {
-        $method = $this->method;
-        $path = $this->path;
-        $params = [];
+        self::initialize();
+        return self::$routes->group($group_path);
+    }
 
-        if (! $this->hasRoute($method, $path)) {
-            $routeParams = $this->checkRouteParams();
-            $path = $routeParams['path'] ?? '';
-            $params = $routeParams['params'];
+    public static function resolve($method, $path)
+    {
+        self::initialize();
+        return self::$routes->resolve($method, $path);
+    }
+
+    public static function dispatch(string $method, string $path)
+    {
+        if (! self::$dispatcher) {
+            throw new DispatcherNotAssignedException('A Dispatcher is not assigned to Router.');
         }
 
-        $route = $this->routes[$method][$path] ?? 'Page Not Found';
+        //$resolved_route = $this->resolve($method, $path);
 
-        if (is_string($route)) {
-            return $route;
-        }
-        
-        if (is_array($route)) {
-            $route[0] = new $route[0]();
-        }
-        
-        return call_user_func_array($route, $params);
-
+        return null;//$this->dispatcher->dispatch($resolved_route, 'a');
     }
 
-    private function checkRouteParams()
+    private static function initialize()
     {
-        $method = $this->method;
-
-        foreach ($this->routes[$method] as $route => $callback) {
-            preg_match_all('/\/{:\w+}/', $route, $matches);
-
-            if ($matches[0]) {
-                $resolvedParams = $this->resolveParams($route, $matches);
-                $path = $resolvedParams['path'];
-
-                if ($this->hasRoute($method, $path)) {
-                    return $resolvedParams;
-                }
-            }
+        if (! self::$initialized) {
+            self::init();
         }
     }
 
-    private function resolveParams($route, $matches) 
+    public static function hasRoute($path)
     {
-        $path = $this->path;
-        $method = $this->method;
-
-        $exploded_route = explode('/', $route);
-        $exploded_path = explode('/', $path);
-
-        if (count($exploded_path) > count($exploded_route)) {
-            return [
-                'path' => '',
-                'params' => []
-            ];
-        }
-        $params = [];
-        $param = 0;
-        $params_list = $this->routes_params[$method][$route] ?? [];
-
-        foreach ($exploded_path as $key => $value) {
-            if (isset($params_list[$param]) && $exploded_path[$key] !== $exploded_route[$key]) {
-                $params = array_merge($params, [ $params_list[$param] => $exploded_path[$key]]);
-                $param++;
-            }
-        }
-
-        return [
-            'path' => implode('/', $exploded_route),
-            'params' => $params
-        ];
+        return self::$routes->hasRoute($path);
     }
 }
