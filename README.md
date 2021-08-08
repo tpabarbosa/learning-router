@@ -11,6 +11,7 @@ Router::get('/', function() {
 
 //Router::resolve($method, $path) returns an object that represents the route
 $route = Router::resolve('get', '/');
+
 //outputs: '/' [GET]
 echo $route;
 

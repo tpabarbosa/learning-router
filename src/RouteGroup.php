@@ -25,7 +25,8 @@ class RouteGroup
 
     public function group($group_path)
     {
-        $group = new RouteGroup($group_path);
+        // BUG: Issue #1
+        $group = new self($group_path);
         $this->groups[] = $group;
         return $group;
     }
@@ -44,6 +45,7 @@ class RouteGroup
         return $this->collection->resolveRoute($method, $path, $this->groups);
     }
 
+    //BUG: Issue #2
     public function hasRoute($path)
     {
         return $this->collection->hasRoute($path);

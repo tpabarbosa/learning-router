@@ -6,7 +6,7 @@ class Route
 {
     private const PARAM_REGEX = '/{(\w+):(\[.+?]\+?)}/';
     private const PARAM = '/{(\w+)}/';
-    public const VERBS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
+    public const VERBS = ['GET', 'POST', 'PUT', 'UPDATE', 'DELETE', 'PATCH', 'OPTIONS'];
 
     /**
      * Path to this route.
@@ -40,7 +40,7 @@ class Route
         $methods = $this->validateMethods($methods);
         $callback = self::validateCallback($callback);
         $this->methods = array_merge($this->methods, $methods);
-        
+
         $this->callbacks[] = ['methods' => $methods, 'callback_params' => $callback_params, 'callback' => $callback];
     }
 
@@ -62,7 +62,7 @@ class Route
         if (! is_array($methods)) {
             throw new \Exception("Route methods must be strings inside the array.");
         }
-        
+
         foreach ($methods as $method) {
             if (! is_string($method)) {
                 throw new \Exception("Route methods must be strings inside the array.");
@@ -92,7 +92,7 @@ class Route
         $parts = explode('/', ltrim($path, '/'));
         preg_match_all(self::PARAM_REGEX, $path, $matchesA);
         preg_match_all(self::PARAM, $path, $matchesB);
-        $parts = array_map(function ($part) use ($matchesA, $matchesB) { 
+        $parts = array_map(function ($part) use ($matchesA, $matchesB) {
             $part = self::setPart($part, $matchesA);
             $part = self::setPart($part, $matchesB);
             return $part;
@@ -100,7 +100,7 @@ class Route
         return $parts;
     }
 
-    private static function setPart($part, $matches) 
+    private static function setPart($part, $matches)
     {
         if (isset($matches[0]) && !empty($matches[0])) {
             for ($match = 0; $match <= count($matches[0])-1; $match++) {
@@ -151,7 +151,7 @@ class Route
 
     private function filterCallback($method)
     {
-        $callback = array_filter($this->callbacks, function($callback) use ($method) {
+        $callback = array_filter($this->callbacks, function ($callback) use ($method) {
             if (in_array($method, $callback['methods'])) {
                 return true;
             }
@@ -165,7 +165,6 @@ class Route
         $method = self::toUpper($method);
         $callback = $this->filterCallback($method);
         return $callback['callback_params'];
-
     }
 
     public function hasMethod($method)

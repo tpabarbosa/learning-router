@@ -6,6 +6,7 @@ require_once(__DIR__ . '/../app/Utils.php');
 //use DI\Container;
 use tpab\Router\Router;
 use tpab\Router\Demo\ControllerExample;
+
 //use tpab\Router\Demo\DIContainerDispatcher;
 
 // $container = new DI\Container();
@@ -33,6 +34,8 @@ Router::get('/controller/{id:[\d]+}/{b}/{value:[([:alpha:]:_)]+}', [ControllerEx
 Router::post('/post', 'Testing Post');
 Router::add('PATCH', '/post', 'Testing Patch');
 Router::add(['PATCH', 'delete'], '/test', 'Testing array methods');
+
+Router::group('/admin')->add('get', '/', 'Testing Admin');
 
 Router::group('/group')
     ->add('get', '/', 'First testing group')
