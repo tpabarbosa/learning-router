@@ -10,9 +10,11 @@
         <testsuite name="router">
             <file>tests/RouterTest.php</file>
             <file>tests/RouteTest.php</file>
+            <file>tests/RouteGroupTest.php</file>
         </testsuite>
         <testsuite name="units">
             <file>tests/RouteTest.php</file>
+            <file>tests/RouteGroupTest.php</file>
         </testsuite>
     </testsuites>
     <filter>
